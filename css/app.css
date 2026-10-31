@@ -725,3 +725,16 @@ h1,h2,h3{font-weight:800;letter-spacing:-.035em}
 .quiet .fade,.quiet .slide-n,.quiet .slide-p{animation:none!important}
 .hint .link{font-size:13px;text-decoration:underline;text-underline-offset:2px}
 html,body{height:100%}
+/* foto bijsnijden */
+.crop{position:absolute;inset:0;z-index:70;background:#000;display:flex;flex-direction:column;color:#fff;animation:fade .2s ease both}
+.crop .ctop{padding:calc(18px + env(safe-area-inset-top,0px)) 20px 8px;text-align:center}
+.crop .ctop b{display:block;font-size:20px}
+.crop .ctop span{font-size:14px;opacity:.7}
+.crop .stage{flex:1;position:relative;overflow:hidden;touch-action:none;cursor:grab}
+.crop .stage img{position:absolute;left:0;top:0;transform-origin:0 0;user-select:none;-webkit-user-drag:none;pointer-events:none;max-width:none}
+.crop .ring{position:absolute;border-radius:50%;box-shadow:0 0 0 9999px rgba(0,0,0,.6);border:2px solid #fff;pointer-events:none}
+.crop .cbar{display:flex;align-items:center;gap:12px;padding:14px 20px}
+.crop .cbar input{flex:1;accent-color:#fff}
+.crop .cbtns{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 20px calc(20px + env(safe-area-inset-bottom,0px))}
+.crop .cbtns button{height:52px;border-radius:14px;font:inherit;font-weight:700;font-size:16px;border:0}
+.crop .cno{background:#222;color:#fff}.crop .cyes{background:#fff;color:#000}
