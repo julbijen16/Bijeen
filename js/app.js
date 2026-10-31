@@ -618,11 +618,15 @@ const Bio={
 function offerBio(){ Bio.available().then(ok=>{ if(!ok||Bio.on) return;
   openSheet(`<h2>Face ID of vingerafdruk?</h2><p class="sub">Dan hoef je na het vergrendelen geen pincode te typen. Je pincode blijft altijd werken.</p><div class="row2"><button type="button" class="btn ghost" id="bno">Nee, bedankt</button><button type="button" class="btn" id="byes">Ja, gebruiken</button></div>`,
     (el,close)=>{ el.querySelector('#bno').onclick=close; el.querySelector('#byes').onclick=async()=>{ try{ await Bio.register(); close(); toast('Face ID / vingerafdruk staat aan'); }catch(e){ toast('Dat lukte niet. Je kunt het later aanzetten in je profiel.'); close(); } }; }); }); }
+function offerTransfer(){ DB.transferCode().then(c=>{
+  openSheet(`<h2>Gebruik je Bijeen op je beginscherm?</h2><p class="sub">Je bent nu binnen in de browser. Open Bijeen vanaf je beginscherm, tik op <b>Herstel via e-mail</b> › <b>Ik heb al een code</b> en vul deze code in. Hij werkt 10 minuten.</p>
+    <div class="codein" style="text-align:center;font-size:34px;letter-spacing:8px;margin:18px 0">${esc(c)}</div><button type="button" class="btn" id="tok">Klaar</button>`,
+    (el,close)=>{ el.querySelector('#tok').onclick=close; }); }).catch(()=>{}); }
 function showLogin(mode){
   document.getElementById('login')?.remove();
   const el=document.createElement('div'); el.className='login'; el.id='login'; $('#app').appendChild(el);
-  let step=mode==='lock'?'pin':mode==='rec'?'rec':'code', pin='', first='', busy=false;
-  let code='', fam=null, who=null, newName='', purpose='', fname='', myname='', mymail='', rmail='', made=null;
+  let step=mode==='lock'?'pin':mode==='rec'?'rec':mode==='recovered'?'set':'code', pin='', first='', busy=false;
+  let code='', fam=null, who=null, newName='', purpose=mode==='recovered'?'recover':'', viaLink=mode==='recovered', fname='', myname='', mymail='', rmail='', made=null;
   const bg=`<svg class="hexbg" viewBox="0 0 100 100"><g fill="none" stroke="currentColor" stroke-width="2"><polygon points="${hexPts(30,30,20)}"/><polygon points="${hexPts(64.6,30,20)}"/><polygon points="${hexPts(47.3,60,20)}"/><polygon points="${hexPts(81.9,60,20)}"/></g></svg>`;
   const pad=()=>`<div class="pins">${[0,1,2,3].map(i=>`<i class="${i<pin.length?'on':''}"></i>`).join('')}</div>
     <div class="keypad">${['1','2','3','4','5','6','7','8','9','bio','0','del'].map(k=>k==='bio'?(step==='pin'&&Bio.on?`<button data-k="bio" aria-label="Face ID of vingerafdruk">${I.face}</button>`:'<span></span>'):k==='del'?`<button data-k="del" aria-label="Wissen">${I.left}</button>`:`<button data-k="${k}">${k}</button>`).join('')}</div>`;
@@ -632,10 +636,10 @@ function showLogin(mode){
     if(step==='code') el.innerHTML=`${bg}<div class="top">${logoSvg(84)}<div class="lname">Bijeen</div><div class="ltag">Vul de gezinscode in. Die vind je bij iemand die de app al gebruikt, onder Profiel › Persoon uitnodigen.</div>${offline}
       <input class="inp codein" id="gcode" maxlength="6" placeholder="K7RM4Q" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Gezinscode" value="${esc(code)}"></div>
       <div class="lb"><button class="dark" id="next">Verder</button></div><div class="lcode lrow"><button id="newfam">Nieuw gezin aanmaken</button><button id="recover">Herstel via e-mail</button></div>`;
-    if(step==='rec') el.innerHTML=`${bg}<div class="top">${logoSvg(56)}<div class="lname" style="font-size:40px">Weer binnenkomen</div><div class="ltag">Vul je reserve e-mail in. Je krijgt een code waarmee je deze telefoon toevoegt en een nieuwe pincode kiest. Je oude telefoon wordt daarna uitgelogd.</div>
+    if(step==='rec') el.innerHTML=`${bg}<div class="top">${logoSvg(56)}<div class="lname" style="font-size:40px">Weer binnenkomen</div><div class="ltag">Vul je reserve e-mail in. Je krijgt een mail met een link waarmee je deze telefoon toevoegt en een nieuwe pincode kiest. Je oude telefoon wordt daarna uitgelogd.</div>
       <input class="inp" id="rmail" type="email" placeholder="naam@voorbeeld.nl" autocomplete="email" style="margin-top:22px" value="${esc(rmail)}"></div>
-      <div class="lb"><button class="dark" id="next">Stuur code</button></div><div class="lcode"><button id="back">Terug</button></div>`;
-    if(step==='rcode') el.innerHTML=`${bg}<div class="top">${logoSvg(56)}<div class="lname" style="font-size:40px">Code uit je e-mail</div><div class="ltag">We hebben een code gestuurd naar ${esc(rmail)}. Kijk ook even in je spam.</div>
+      <div class="lb"><button class="dark" id="next">Stuur mail</button></div><div class="lcode lrow"><button id="back">Terug</button><button id="havecode">Ik heb al een code</button></div>`;
+    if(step==='rcode') el.innerHTML=`${bg}<div class="top">${logoSvg(56)}<div class="lname" style="font-size:40px">Code uit je e-mail</div><div class="ltag">${rmail?`We hebben een mail gestuurd naar ${esc(rmail)} (kijk ook in je spam). Open die op deze telefoon en tik op de link. Staat er een code in, of liet je browser een code zien? Vul die dan hier in.`:'Vul de code van 6 cijfers in die je browser liet zien na het tikken op de link.'}</div>
       <input class="inp codein" id="rcode" inputmode="numeric" maxlength="8" placeholder="123456" autocomplete="one-time-code" aria-label="Code uit de e-mail" style="margin-top:22px"></div>
       <div class="lb"><button class="dark" id="next">Verder</button></div><div class="lcode"><button id="back">Terug</button></div>`;
     if(step==='new') el.innerHTML=`${bg}<div class="top">${logoSvg(56)}<div class="lname" style="font-size:40px">Nieuw gezin</div><div class="ltag">Je bent de eerste. Daarna nodig je de rest uit met een code.</div>${offline}
@@ -669,10 +673,12 @@ function showLogin(mode){
       el.querySelector('#newfam').onclick=()=>{step='new';draw();}; el.querySelector('#recover').onclick=()=>{step='rec';draw();}; }
     if(step==='rec'){ bk.onclick=()=>{step=S&&DB.session?'pin':'code';draw();};
       nx.onclick=()=>run(async()=>{ rmail=el.querySelector('#rmail').value.trim(); if(!/^\S+@\S+\.\S+$/.test(rmail)) return toast('Vul een geldig e-mailadres in');
-        await DB.recoverStart(rmail); step='rcode'; draw(); }); }
+        await DB.recoverStart(rmail); step='rcode'; draw(); });
+      el.querySelector('#havecode').onclick=()=>{ rmail=''; step='rcode'; draw(); }; }
     if(step==='rcode'){ bk.onclick=()=>{step='rec';draw();}; const c=el.querySelector('#rcode'); setTimeout(()=>c.focus(),200);
       nx.onclick=()=>run(async()=>{ const t=c.value.replace(/\D/g,''); if(t.length<6) return toast('Vul de code uit de e-mail in');
-        await DB.recoverCode(rmail,t); S=DB.state; applyNames(); purpose='recover'; step='set'; pin=''; draw(); }); }
+        let ok=await DB.redeem(t); if(!ok){ if(!rmail) return toast('Die code klopt niet of is verlopen.'); await DB.recoverCode(rmail,t); }
+        S=DB.state; applyNames(); purpose='recover'; step='set'; pin=''; draw(); }); }
     if(step==='new'){ bk.onclick=()=>{step='code';draw();};
       nx.onclick=()=>{ fname=el.querySelector('#fname').value.trim(); myname=el.querySelector('#myname').value.trim(); mymail=el.querySelector('#mymail').value.trim();
         if(!fname||!myname) return toast('Vul beide namen in'); if(mymail&&!/^\S+@\S+\.\S+$/.test(mymail)) return toast('Vul een geldig e-mailadres in');
@@ -692,7 +698,7 @@ function showLogin(mode){
         else if(step==='again'){ if(pin!==first){ pin=''; step='set'; draw(); return toast('Pincodes waren niet gelijk, probeer opnieuw'); }
           const p=pin; run(async()=>{
             if(purpose==='create'){ made=await DB.createFamily(fname,myname,p,mymail); await Lock.setPin(p); Lock.unlock(); step='made'; draw(); return; }
-            if(purpose==='recover'){ await DB.setPin(p); await done(p); toast('Nieuwe pincode ingesteld'); setTimeout(offerBio,900); return; }
+            if(purpose==='recover'){ await DB.setPin(p); await done(p); toast('Nieuwe pincode ingesteld'); setTimeout(viaLink&&!isStandalone()?offerTransfer:offerBio,900); return; }
             const used=fam.people.map(x=>x.color); const color=DEF_ORDER.find(c=>!used.includes(c))||'leisteen';
             const ok=await DB.join(code,who||DB.newId(),p,fam.name,who?null:{name:newName,color,order:fam.people.length});
             if(!ok){ step='set'; return wrong('Dat lukte niet, probeer opnieuw'); }
@@ -787,6 +793,19 @@ function onData(why){
   if(why==='loggedout'){ document.querySelectorAll('.scrim').forEach(x=>x.remove()); main.innerHTML=''; $('#tabbar').innerHTML=''; $('#fab').hidden=true; showLogin(); toast('Deze telefoon is uitgelogd'); return; }
   S=DB.state; if(!S) return; applyNames(); applyColors(); applyTheme();
   if(why!=='session') quietRender(); }
+/* links uit e-mails: ?herstel=1 (telefoon kwijt) en ?bevestigd=1 (reserve e-mail bevestigd) */
+async function startUp(){
+  const q=new URLSearchParams(location.search), h=location.hash||'';
+  if(!q.has('herstel')&&!q.has('bevestigd')) return boot();
+  const bad=/error/.test(h)||q.has('error'); let ok=false;
+  if(q.has('herstel')&&!bad){ try{ ok=await DB.recoverLink(); }catch(e){ setTimeout(()=>toast(e.message),400); } }
+  else if(q.has('bevestigd')&&DB.configured){ try{ await DB.client.auth.getSession(); }catch(e){} }
+  history.replaceState(null,'',location.pathname+'#home');
+  if(bad) setTimeout(()=>toast('Deze link is verlopen of al gebruikt. Vraag een nieuwe aan.'),400);
+  else if(q.has('bevestigd')) setTimeout(()=>toast('Je reserve e-mail is bevestigd'),400);
+  if(ok){ S=DB.state; applyNames(); applyColors(); applyTheme(); showLogin('recovered'); return; }
+  boot();
+}
 function boot(){
   S=DB.state; if(!S||!DB.session){ $('#fab').hidden=true; showLogin(); return; }
   applyNames(); applyColors(); applyTheme(); $('#fab').hidden=false; render();
@@ -1159,4 +1178,4 @@ if('serviceWorker' in navigator){
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState!=='visible') return; if(stale) location.reload(); else navigator.serviceWorker.getRegistration().then(r=>r&&r.update()).catch(()=>{}); });
 }
 navigator.serviceWorker&&navigator.serviceWorker.addEventListener('message',e=>{ if(e.data&&e.data.open){ location.hash=e.data.open; } });
-boot();
+startUp();
