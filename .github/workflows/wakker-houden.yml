@@ -1,0 +1,31 @@
+# Een gratis Supabase-project gaat op pauze na een week zonder gebruik.
+# Deze "wekker" tikt de database elke twee dagen even aan, zodat dat nooit gebeurt.
+name: Supabase wakker houden
+
+on:
+  schedule:
+    - cron: "17 6 */2 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: supabase/setup-cli@v1
+        if: env.REF != ''
+        with:
+          version: latest
+      - name: Database aantikken
+        if: env.REF != ''
+        run: |
+          KEYS=$(supabase projects api-keys --project-ref "$REF" -o json)
+          KEY=$(echo "$KEYS" | jq -r '[.[] | select(.name=="anon")][0].api_key // empty')
+          if [ -z "$KEY" ]; then KEY=$(echo "$KEYS" | jq -r '[.[] | select((.type // "")=="publishable")][0].api_key // empty'); fi
+          curl -sS --fail -o /dev/null -w "Supabase antwoordde: %{http_code}\n" \
+            "https://${REF}.supabase.co/rest/v1/families?select=id&limit=1" -H "apikey: ${KEY}"

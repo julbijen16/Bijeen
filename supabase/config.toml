@@ -1,0 +1,5 @@
+# Instellingen voor de Supabase-tools (gebruikt door de online-zet-workflow).
+project_id = "bijeen"
+
+[functions.notify]
+verify_jwt = false
