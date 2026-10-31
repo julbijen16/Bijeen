@@ -1108,7 +1108,7 @@ function sheetSearch(){
     q.oninput=draw; draw(); setTimeout(()=>q.focus(),250);
   });
 }
-let tt; function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('show'),2000); }
+let tt; function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('show'),Math.max(2200,m.length*70)); }
 
 /* ---------- start ---------- */
 if('serviceWorker' in navigator){

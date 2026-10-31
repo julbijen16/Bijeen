@@ -76,8 +76,9 @@ jobs:
         if: steps.check.outputs.ready == 'true'
         run: |
           KEYS=$(supabase projects api-keys --project-ref "$REF" -o json)
-          KEY=$(echo "$KEYS" | jq -r '[.[] | select(.name=="anon")][0].api_key // empty')
-          if [ -z "$KEY" ]; then KEY=$(echo "$KEYS" | jq -r '[.[] | select((.type // "")=="publishable")][0].api_key // empty'); fi
+          # liefst de nieuwe "publishable" sleutel; anders de oude anon-sleutel
+          KEY=$(echo "$KEYS" | jq -r '[.[] | select((.type // "")=="publishable")][0].api_key // empty')
+          if [ -z "$KEY" ]; then KEY=$(echo "$KEYS" | jq -r '[.[] | select(.name=="anon")][0].api_key // empty'); fi
           if [ -z "$KEY" ]; then echo "::error::Kon de openbare sleutel niet vinden"; exit 1; fi
           # in een bestand bewaren (GitHub geeft waarden met een geheim erin niet door tussen stappen-uitvoer)
           printf '%s\n%s\n' "https://${REF}.supabase.co" "$KEY" > "$RUNNER_TEMP/bijeen-keys"
