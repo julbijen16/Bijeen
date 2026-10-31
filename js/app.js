@@ -1152,7 +1152,10 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(e=>console.warn('service worker',e));
   // nieuwe versie online: meteen herladen als de app nog niet verbonden is, anders de volgende keer dat je hem opent
   let had=!!navigator.serviceWorker.controller, stale=false;
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(!had){ had=true; return; } if(!DB.configured||!DB.session) location.reload(); else stale=true; });
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(!had){ had=true; return; } stale=true;
+    // nieuwe versie: herladen zodra er niets open staat (geen venster, bijsnijden of half ingevulde pincode)
+    const busy=()=>document.querySelector('.scrim,.crop')||(document.querySelector('#login')&&DB.session);
+    const tryReload=()=>{ if(!busy()) location.reload(); else setTimeout(tryReload,1500); }; tryReload(); });
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState!=='visible') return; if(stale) location.reload(); else navigator.serviceWorker.getRegistration().then(r=>r&&r.update()).catch(()=>{}); });
 }
 navigator.serviceWorker&&navigator.serviceWorker.addEventListener('message',e=>{ if(e.data&&e.data.open){ location.hash=e.data.open; } });
