@@ -59,18 +59,24 @@ jobs:
         run: |
           OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           SITE="https://${OWNER}.github.io/${{ github.event.repository.name }}/"
-          jq -n --arg site "$SITE" '{
-            site_url: $site,
-            uri_allow_list: ($site + "**"),
-            external_anonymous_users_enabled: true,
+          # Elke instelling apart, zodat een weigering van de ene de andere niet tegenhoudt.
+          patch() {
+            CODE=$(curl -sS -o resp.txt -w "%{http_code}" -X PATCH "https://api.supabase.com/v1/projects/${REF}/config/auth" \
+              -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" -H "Content-Type: application/json" --data "$2")
+            if [ "$CODE" -ge 300 ]; then echo "::warning::$1 lukte niet ($CODE): $(head -c 300 resp.txt)"; return 1; fi
+            echo "$1: gelukt"
+          }
+          FAIL=0
+          patch "Anoniem inloggen aanzetten" '{"external_anonymous_users_enabled":true}' || FAIL=1
+          patch "Adres van de app" "$(jq -n --arg site "$SITE" '{site_url:$site, uri_allow_list:($site + "**")}')" || true
+          # Eigen e-mailteksten mogen bij Supabase soms alleen met een eigen mailserver; dan blijft de standaardtekst.
+          patch "Nederlandse e-mails" "$(jq -n '{
             mailer_subjects_magic_link: "Je code voor Bijeen",
             mailer_templates_magic_link_content: "<h2>Bijeen</h2><p>Je code om weer in Bijeen te komen:</p><p style=\"font-size:28px;font-weight:bold;letter-spacing:4px\">{{ .Token }}</p><p>Vul deze code in de app in. Heb je dit niet aangevraagd? Dan kun je deze mail negeren.</p>",
             mailer_subjects_email_change: "Bevestig je reserve e-mail voor Bijeen",
             mailer_templates_email_change_content: "<h2>Bijeen</h2><p>Tik op de link om {{ .NewEmail }} te bevestigen als reserve e-mail. Je gebruikt dit adres alleen als je telefoon kwijt is.</p><p><a href=\"{{ .ConfirmationURL }}\">Bevestig mijn reserve e-mail</a></p>"
-          }' > auth.json
-          curl -sS --fail-with-body -X PATCH "https://api.supabase.com/v1/projects/${REF}/config/auth" \
-            -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" -H "Content-Type: application/json" --data @auth.json > /dev/null
-          echo "Inloginstellingen bijgewerkt (site: $SITE)"
+          }')" || true
+          exit $FAIL
       - name: Sleutel voor de app ophalen
         id: keys
         if: steps.check.outputs.ready == 'true'
