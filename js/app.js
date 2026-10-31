@@ -722,6 +722,45 @@ function placeSuggest(inp,box,after){
   },300);
   inp.onblur=()=>setTimeout(()=>box.hidden=true,200);
 }
+/* profielfoto: zelf het kader kiezen (slepen en knijpen/schuiven om te zoomen) */
+function cropPhoto(file){ return new Promise(res=>{
+  const url=URL.createObjectURL(file), img=new Image();
+  img.onerror=()=>{ URL.revokeObjectURL(url); toast('Deze foto kan niet worden geopend. Kies een JPG of PNG.'); res(null); };
+  img.onload=()=>{
+    const el=document.createElement('div'); el.className='crop';
+    el.innerHTML=`<div class="ctop"><b>Kies het kader</b><span>Sleep de foto en zoom met twee vingers of de schuif</span></div>
+      <div class="stage"><img alt=""><div class="ring"></div></div>
+      <div class="cbar"><span>−</span><input type="range" min="0" max="1000" value="0" aria-label="Zoom"><span>+</span></div>
+      <div class="cbtns"><button class="cno" type="button">Annuleren</button><button class="cyes" type="button">Gebruiken</button></div>`;
+    $('#app').appendChild(el);
+    const st=el.querySelector('.stage'), im=el.querySelector('.stage img'), ring=el.querySelector('.ring'), rng=el.querySelector('input');
+    im.src=url; const W=img.naturalWidth, H=img.naturalHeight;
+    let D=0, cx=0, cy=0, min=1, sc=1, x=0, y=0;
+    const layout=()=>{ const r=st.getBoundingClientRect(); D=Math.min(r.width,r.height)-40; cx=r.width/2; cy=r.height/2;
+      Object.assign(ring.style,{width:D+'px',height:D+'px',left:(cx-D/2)+'px',top:(cy-D/2)+'px'}); min=D/Math.min(W,H); };
+    const clamp=()=>{ sc=Math.max(min,Math.min(min*6,sc)); x=Math.min(cx-D/2,Math.max(cx+D/2-W*sc,x)); y=Math.min(cy-D/2,Math.max(cy+D/2-H*sc,y)); };
+    const paint=()=>{ clamp(); im.style.transform=`translate(${x}px,${y}px) scale(${sc})`; rng.value=Math.round(Math.log(sc/min)/Math.log(6)*1000); };
+    const zoomAt=(ns,px,py)=>{ ns=Math.max(min,Math.min(min*6,ns)); x=px-(px-x)*ns/sc; y=py-(py-y)*ns/sc; sc=ns; paint(); };
+    layout(); sc=min; x=cx-W*sc/2; y=cy-H*sc/2; paint();
+    const onResize=()=>{ const fx=(cx-x)/sc, fy=(cy-y)/sc, rel=sc/min; layout(); sc=min*rel; x=cx-fx*sc; y=cy-fy*sc; paint(); };
+    window.addEventListener('resize',onResize);
+    const pts=new Map(); let last=null;
+    const pos=e=>{ const r=st.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; };
+    st.addEventListener('pointerdown',e=>{ st.setPointerCapture(e.pointerId); pts.set(e.pointerId,pos(e)); last=null; });
+    st.addEventListener('pointermove',e=>{ if(!pts.has(e.pointerId)) return; const prev=pts.get(e.pointerId), p=pos(e); pts.set(e.pointerId,p);
+      if(pts.size===1){ x+=p.x-prev.x; y+=p.y-prev.y; paint(); return; }
+      const [a,b]=[...pts.values()], d=Math.hypot(a.x-b.x,a.y-b.y), mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+      if(last){ x+=mx-last.mx; y+=my-last.my; zoomAt(sc*d/last.d,mx,my); } last={d,mx,my}; });
+    const up=e=>{ pts.delete(e.pointerId); last=null; };
+    st.addEventListener('pointerup',up); st.addEventListener('pointercancel',up);
+    st.addEventListener('wheel',e=>{ e.preventDefault(); const p=pos(e); zoomAt(sc*Math.exp(-e.deltaY/400),p.x,p.y); },{passive:false});
+    rng.oninput=()=>zoomAt(min*Math.pow(6,rng.value/1000),cx,cy);
+    const finish=v=>{ window.removeEventListener('resize',onResize); URL.revokeObjectURL(url); el.remove(); res(v); };
+    el.querySelector('.cno').onclick=()=>finish(null);
+    el.querySelector('.cyes').onclick=()=>{ const z=320, c=document.createElement('canvas'); c.width=c.height=z;
+      c.getContext('2d').drawImage(img,(cx-D/2-x)/sc,(cy-D/2-y)/sc,D/sc,D/sc,0,0,z,z); finish(c.toDataURL('image/jpeg',.85)); };
+  };
+  img.src=url; }); }
 /* photos on events and notes: resized on the phone before saving */
 function photoField(box,photos){
   const draw=()=>{ box.innerHTML=photos.map((u,i)=>`<button type="button" class="ph" data-pv="${i}" style="background-image:url(${DB.src(u)})" aria-label="Foto ${i+1} bekijken"></button>`).join('')+`<label class="add">${I.camera}Foto<input type="file" accept="image/*" hidden></label>`;
@@ -1036,10 +1075,8 @@ function sheetProfile(){
     Bio.available().then(ok=>{ if(!ok) return; const bb=el.querySelector('#biobox');
       bb.innerHTML=`<label class="toggle" style="margin-top:14px"><input type="checkbox" id="bio" ${Bio.on?'checked':''}><span>Ontgrendelen met Face ID of vingerafdruk</span></label>`;
       bb.querySelector('#bio').onchange=async e=>{ if(e.target.checked){ try{ await Bio.register(); toast('Face ID / vingerafdruk staat aan'); }catch(x){ e.target.checked=false; toast('Dat lukte niet'); } } else { Bio.off(); toast('Uitgezet'); } }; });
-    el.querySelectorAll('[data-pf]').forEach(inp=>inp.onchange=e=>{const m=inp.dataset.pf; const f=e.target.files[0]; if(!f) return; const img=new Image(); const url=URL.createObjectURL(f);
-      img.onload=()=>{const c=document.createElement('canvas'),z=256;c.width=c.height=z;const q=Math.min(img.width,img.height);c.getContext('2d').drawImage(img,(img.width-q)/2,(img.height-q)/2,q,q,0,0,z,z);
-        S.people[m].photo=c.toDataURL('image/jpeg',.82); URL.revokeObjectURL(url); save(); close(); render(); toast(`Foto van ${P[m].name} opgeslagen`);};
-      img.onerror=()=>toast('Deze foto kan niet worden geopend. Kies een JPG of PNG.'); img.src=url;});
+    el.querySelectorAll('[data-pf]').forEach(inp=>inp.onchange=e=>{const m=inp.dataset.pf; const f=e.target.files[0]; inp.value=''; if(!f) return;
+      cropPhoto(f).then(d=>{ if(!d) return; S.people[m].photo=d; save(); close(); render(); toast(`Foto van ${P[m].name} opgeslagen`); });});
     el.querySelectorAll('[data-nm]').forEach(inp=>{ const m=inp.dataset.nm; const done=()=>{ const v=inp.value.trim(); if(!v||v===P[m].name){inp.value=P[m].name;return;} S.people[m].name=v; applyNames(); save(); render(); toast(`Naam gewijzigd in ${v}`); };
       inp.onchange=done; inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();inp.blur();}}; });
     el.querySelectorAll('[data-rmp]').forEach(b=>confirmBtn(b,'',()=>{delete S.people[b.dataset.rmp].photo;save();close();render();toast('Foto weggehaald');}));
