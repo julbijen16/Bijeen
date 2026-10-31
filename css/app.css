@@ -62,7 +62,8 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:
 .av.p-j{background:linear-gradient(150deg,var(--j1),var(--j2))}
 .av.p-l{background:linear-gradient(150deg,var(--l1),var(--l2))}
 .av.p-b{background:linear-gradient(150deg,var(--b1),var(--b2));color:#5A2E00}
-.av.ph{background-size:cover;background-position:center}
+/* de kleurregels per persoon gebruiken 'background:' en zouden dit anders terugzetten */
+.av.ph{background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}
 .av.p-j{--rc:var(--j1)} .av.p-l{--rc:var(--l1)} .av.p-b{--rc:var(--b1)}
 .famhint{margin-top:10px;font-size:13px;color:var(--ink-3);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .famhint button{font-weight:700;color:var(--ink);text-decoration:underline}
