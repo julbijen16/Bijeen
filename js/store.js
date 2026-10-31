@@ -198,6 +198,15 @@ window.addEventListener('offline', status);
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') sync(); });
 
 /* --- signing in --- */
+async function finishRecover(){
+  const { data } = await sb.rpc('hello', { p_label: deviceLabel() });
+  if(!data || data.blocked) throw new Error('Deze persoon hoort (nog) niet bij een gezin.');
+  await sb.auth.signOut({ scope:'others' }).catch(()=>{}); // oude telefoon uitloggen
+  docs = {}; outbox = {}; LS.set('since','');
+  const f = await sb.from('families').select('name').maybeSingle();
+  await startSession({ family_id:data.family_id, member_id:data.member_id, family_name:(f.data||{}).name||'' });
+  return true;
+}
 async function ensureAnon(){
   if(!sb) throw new Error('De app is nog niet met de server verbonden.');
   const { data } = await sb.auth.getSession();
@@ -260,24 +269,37 @@ const API = {
     return data;
   },
   async setEmail(email){
-    const { error } = await sb.auth.updateUser({ email }, { emailRedirectTo: location.origin+location.pathname+'#bevestigd' });
+    const { error } = await sb.auth.updateUser({ email }, { emailRedirectTo: location.origin+location.pathname+'?bevestigd=1' });
     if(error) throw err(error);
   },
   async email(){ if(!sb) return ''; const { data } = await sb.auth.getUser(); return data.user ? (data.user.email || data.user.new_email || '') : ''; },
   async recoverStart(email){
     if(!sb) throw new Error('De app is nog niet met de server verbonden.');
-    const { error } = await sb.auth.signInWithOtp({ email, options:{ shouldCreateUser:false } });
+    const { error } = await sb.auth.signInWithOtp({ email, options:{ shouldCreateUser:false, emailRedirectTo: location.origin+location.pathname+'?herstel=1' } });
     if(error) throw new Error(/not found|signups not allowed/i.test(error.message) ? 'Dit e-mailadres is niet bekend als reserve e-mail.' : err(error).message);
   },
   async recoverCode(email, token){
     const { error } = await sb.auth.verifyOtp({ email, token, type:'email' });
     if(error) throw new Error('Die code klopt niet of is verlopen.');
-    const { data } = await sb.rpc('hello', { p_label: deviceLabel() });
-    if(!data || data.blocked) throw new Error('Deze persoon hoort (nog) niet bij een gezin.');
-    await sb.auth.signOut({ scope:'others' }).catch(()=>{}); // oude telefoon uitloggen
+    return finishRecover();
+  },
+  /* de link uit de herstelmail is geopend: is er nu een (niet-anonieme) sessie? */
+  async recoverLink(){
+    if(!sb) return false;
+    const { data } = await sb.auth.getSession();
+    const u = data.session && data.session.user;
+    if(!u || u.is_anonymous) return false;
+    return finishRecover();
+  },
+  /* eenmalige code om de app op het beginscherm aan deze persoon te koppelen */
+  async transferCode(){ const { data, error } = await sb.rpc('make_transfer'); if(error) throw err(error); return data; },
+  async redeem(code){
+    await ensureAnon();
+    const { data, error } = await sb.rpc('redeem_transfer', { p_code:code });
+    if(error) throw err(error);
+    if(!data) return false;
     docs = {}; outbox = {}; LS.set('since','');
-    const f = await sb.from('families').select('name').maybeSingle();
-    await startSession({ family_id:data.family_id, member_id:data.member_id, family_name:(f.data||{}).name||'' });
+    await startSession({ family_id:data.family_id, member_id:data.member_id, family_name:data.family_name||'' });
     return true;
   },
   /* is this phone still part of the family? */

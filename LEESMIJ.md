@@ -109,7 +109,8 @@ Vanaf nu gaat dit vanzelf: elke keer dat Claude iets verbetert, zet GitHub de ni
 ## Goed om te weten
 
 - **Inloggen:** je blijft ingelogd. De pincode (of Face ID / vingerafdruk) heb je alleen nodig na **Vergrendelen**, of op een nieuwe telefoon.
-- **Telefoon kwijt?** Op de nieuwe telefoon: **Herstel via e-mail**. Je krijgt een code in je mail. Daarna kies je een nieuwe pincode en wordt je oude telefoon uitgelogd.
+- **Nieuwe telefoon?** Het makkelijkst: vraag de gezinscode aan iemand anders in het gezin (Profiel › **Persoon uitnodigen**), vul die in, tik op je eigen naam en vul je pincode in.
+- **Telefoon kwijt?** Op de nieuwe telefoon: **Herstel via e-mail**. Je krijgt een (Engelstalige) mail van Supabase met een link **Log In**. Tik erop: je komt binnen en kiest een nieuwe pincode, en je oude telefoon wordt uitgelogd. Opent de link in de browser in plaats van in de app? Dan laat de browser een code van 6 cijfers zien. Open Bijeen vanaf je beginscherm, tik op **Herstel via e-mail** › **Ik heb al een code** en vul hem in.
 - **Reserve e-mail voor Naomi:** Supabase stuurt met een gratis account alleen mails naar mensen in het team van de organisatie. Wil je dat herstel ook voor Naomi werkt, nodig haar e-mailadres dan uit in de organisatie **Bijeen** via **Organization settings** › **Team** › **Invite** (rol: *Read-only*). Zij hoeft verder niets met Supabase te doen.
 - **Pauze:** Supabase zet een gratis project op pauze na een week zonder gebruik. Daarom tikt GitHub de database elke twee dagen even aan (workflow **Supabase wakker houden**). Jij merkt daar niets van. Gebeurt het toch, dan opent de app nog steeds met alles wat op je telefoon staat; klik dan in het Supabase-dashboard op **Restore project**.
 - **Los van je bedrijf:** Bijeen staat op GitHub Pages en in een eigen Supabase-organisatie. Het gebruikt niets van je Netlify-account of het Supabase-project van je bedrijf.
