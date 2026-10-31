@@ -11,8 +11,7 @@ Family planner PWA (Dutch UI): shared agenda, tasks, shopping lists, notes and a
 - `sw.js`: service worker (offline app shell, photo cache, push notifications).
 - `supabase/migrations/`: tables, row level security and RPCs. Each phone signs in anonymously and is linked to a family with the 6-character family code and a 4-digit PIN (`create_family`, `lookup_family`, `join_family`, `verify_pin`). Recovery is via an e-mail OTP to the person's confirmed reserve address.
 - `supabase/functions/notify`: Edge Function run every minute by `pg_cron`; sends event reminders and "X added Y" notifications with Web Push (VAPID keys are generated on first run and kept in `app_secrets`).
-- Hosting: Netlify (`netlify.toml`, `netlify-build.sh` writes `js/config.js` from the `SUPABASE_URL` and `SUPABASE_ANON_KEY` environment variables).
-- `.github/workflows/supabase.yml`: on every push to `main`, applies migrations, deploys the function and configures auth. Needs the repository secrets `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`, `SUPABASE_ACCESS_TOKEN` and optionally `APP_URL`.
+- `.github/workflows/deploy.yml`: on every push to `main`, applies migrations, deploys the function, configures auth and publishes the site to GitHub Pages. Needs the repository secrets `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD` and `SUPABASE_ACCESS_TOKEN`.
 - `.github/workflows/wakker-houden.yml`: pings the database every two days so the free Supabase project is never paused.
 
 ## Local development
