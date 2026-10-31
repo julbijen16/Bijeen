@@ -4,60 +4,91 @@ Bijeen is de gezinsplanner van de familie Bijen: agenda, taken, boodschappen, no
 
 Deze handleiding doe je **één keer**. Daarna gaat alles vanzelf: elke verbetering die in deze repository komt, staat binnen een paar minuten op jullie telefoons.
 
-Je hebt nodig: je GitHub-account, je Supabase-account en ongeveer 20 minuten.
+Je hebt nodig: een computer (dat werkt makkelijker dan een telefoon), je GitHub-account, je Supabase-account en ongeveer 20 minuten.
+
+**Overzicht**
+
+1. Repository openbaar maken (GitHub)
+2. GitHub Pages aanzetten (GitHub)
+3. Supabase-organisatie en -project maken (Supabase)
+4. Een sleutel voor GitHub maken (Supabase)
+5. Drie geheimen in GitHub zetten (GitHub)
+6. Online zetten (GitHub)
+7. De app op jullie telefoons zetten
+8. Gezin aanmaken en Naomi uitnodigen
 
 ---
 
 ## Stap 1. De repository openbaar maken
 
-GitHub Pages (de gratis hosting van de app) werkt met een gratis account alleen voor openbare repositories. Dat is veilig: hier staat alleen de code van de app. Jullie afspraken, foto's en pincodes staan in Supabase en zijn niet te zien.
+GitHub Pages (de gratis hosting van de app) werkt met een gratis account alleen voor openbare repositories. Dat is veilig: hier staat alleen de code van de app. Jullie afspraken, foto's en pincodes staan in Supabase en zijn voor niemand anders te zien.
 
-1. Ga naar de repository op github.com en klik op **Settings** (tandwieltje, bovenaan).
-2. Scroll helemaal naar beneden naar **Danger Zone** en klik op **Change visibility**.
-3. Kies **Make public** en bevestig.
+1. Ga naar [github.com/julbijen16/Bijeen](https://github.com/julbijen16/Bijeen) en log in als dat nodig is.
+2. Klik bovenaan in de rij tabbladen op **Settings** (tandwieltje, helemaal rechts).
+3. Blijf op de pagina **General** en scroll helemaal naar beneden, naar het rode blok **Danger Zone**.
+4. Klik bij **Change repository visibility** op de knop **Change visibility** › **Change to public**.
+5. GitHub vraagt een paar keer of je het zeker weet. Klik steeds op de knop om door te gaan (**I want to make this repository public**, **I have read and understand these effects**).
+6. Typ als GitHub erom vraagt de naam `julbijen16/Bijeen` over en klik op **Make this repository public**.
+7. Misschien vraagt GitHub nog om je wachtwoord of een code uit je authenticator-app. Vul die in.
+
+Bovenaan de repository staat nu **Public** in plaats van **Private**.
 
 ## Stap 2. GitHub Pages aanzetten
 
-1. Nog steeds in **Settings**: klik links op **Pages**.
-2. Bij **Source** kies je **GitHub Actions**.
+1. Blijf in **Settings** en klik in het menu links op **Pages** (onder het kopje *Code and automation*).
+2. Bij **Build and deployment** › **Source** staat een keuzelijst. Kies **GitHub Actions**.
+3. Meer hoeft hier niet. Je hoeft niets op te slaan.
 
-## Stap 3. Supabase-project maken
+## Stap 3. Supabase-organisatie en -project maken
 
 We zetten Bijeen in een **eigen organisatie**, zodat het nooit iets te maken heeft met het project van je bedrijf.
 
-1. Ga naar [supabase.com/dashboard](https://supabase.com/dashboard). Klik linksboven op de naam van je organisatie en kies **New organization**. Naam: **Bijeen**, plan: **Free**.
-2. Klik in die nieuwe organisatie op **New project**. Naam: **Bijeen**. Regio: **Central EU (Frankfurt)**.
-3. Kies een **databasewachtwoord** en bewaar het in je wachtwoordmanager. Je hebt het zo nodig.
-4. Wacht tot het project klaar is (een paar minuten).
-5. Ga naar **Project Settings** (tandwieltje linksonder) › **General**. Kopieer de **Project ID** (een rij letters, bijvoorbeeld `abcdefghijklmnop`).
+1. Ga naar [supabase.com/dashboard](https://supabase.com/dashboard) en log in.
+2. Klik linksboven op de naam van je huidige organisatie. Kies onderaan het lijstje **New organization**.
+3. Vul in: naam **Bijeen**, type **Personal**, plan **Free**. Klik op **Create organization**.
+4. Je komt nu in de nieuwe organisatie. Klik op **New project** en vul in:
+   - **Project name:** Bijeen
+   - **Database password:** klik op **Generate a password** en kopieer het. Bewaar het in je wachtwoordmanager of schrijf het tijdelijk op. Je hebt het in stap 5 nodig.
+   - **Region:** Central EU (Frankfurt)
+5. Klik op **Create new project** en wacht een paar minuten tot het project klaar is.
+6. Klik linksonder op het tandwieltje **Project Settings** › **General**. Kopieer de **Project ID** (een rij van ongeveer 20 letters, bijvoorbeeld `abcdefghijklmnopqrst`).
 
 ## Stap 4. Een sleutel voor GitHub maken
 
 Hiermee mag GitHub de database en de meldingen voor je klaarzetten.
 
 1. Ga naar [supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens).
-2. Klik op **Generate new token**, noem hem **Bijeen GitHub** en kopieer de sleutel. Je ziet hem maar één keer.
+2. Klik op **Generate new token**. Naam: **Bijeen GitHub**. Laat de vervaldatum op **Never** staan (of kies de langste die er is).
+3. Klik op **Generate token** en kopieer de sleutel (begint met `sbp_`). Je ziet hem maar één keer, dus plak hem meteen in stap 5.
 
-## Stap 5. De drie geheimen in GitHub zetten
+## Stap 5. Drie geheimen in GitHub zetten
 
-1. Ga in de repository naar **Settings** › **Secrets and variables** › **Actions**.
-2. Klik op **New repository secret** en maak deze drie aan (de naam precies zo overnemen):
+1. Ga terug naar de repository op GitHub › **Settings**.
+2. Klik in het menu links op **Secrets and variables** › **Actions**.
+3. Klik op de groene knop **New repository secret**.
+4. Vul bij **Name** de naam in en bij **Secret** de waarde, en klik op **Add secret**. Doe dit drie keer (de namen precies zo overnemen, met hoofdletters en lage streepjes):
 
 | Name | Secret |
 |---|---|
 | `SUPABASE_PROJECT_REF` | de Project ID uit stap 3 |
 | `SUPABASE_DB_PASSWORD` | het databasewachtwoord uit stap 3 |
-| `SUPABASE_ACCESS_TOKEN` | de sleutel uit stap 4 |
+| `SUPABASE_ACCESS_TOKEN` | de sleutel uit stap 4 (begint met `sbp_`) |
 
-Stuur deze gegevens nooit via WhatsApp, mail of chat. Ze horen alleen hier.
+Je ziet ze daarna in de lijst staan, maar de waarde zelf laat GitHub nooit meer zien. Dat hoort zo.
+
+Stuur deze gegevens nooit via WhatsApp, mail of chat, ook niet naar Claude. Ze horen alleen hier.
 
 ## Stap 6. Online zetten
 
-1. Open de pull request in de repository (tabblad **Pull requests**) en klik op **Merge pull request** › **Confirm merge**.
-2. Ga naar het tabblad **Actions**. Daar start vanzelf **Online zetten**. Na een paar minuten staat er een groen vinkje.
-3. Klik op die groene regel: bij **App online zetten** zie je het adres van de app, ongeveer `https://julbijen16.github.io/Bijeen/`.
+1. Klik in de repository bovenaan op het tabblad **Actions**.
+2. Klik links op **Online zetten**.
+3. Klik rechts op de knop **Run workflow** en daarna op de groene knop **Run workflow** in het lijstje dat opent.
+4. Na een paar seconden verschijnt er een regel met een geel bolletje. Wacht tot het een **groen vinkje** wordt (ongeveer 3 minuten).
+5. Klik op die regel. Onder **App online zetten** staat het adres van de app, ongeveer `https://julbijen16.github.io/Bijeen/`. Bewaar dit adres.
 
-Staat er een rood kruisje? Klik erop, maak een schermafbeelding en stuur die naar Claude. Daarna kun je het opnieuw proberen via **Actions** › **Online zetten** › **Run workflow**.
+Staat er een rood kruisje? Klik erop, maak een schermafbeelding en stuur die naar Claude. Daarna kun je het opnieuw proberen met **Run workflow**.
+
+Vanaf nu gaat dit vanzelf: elke keer dat Claude iets verbetert, zet GitHub de nieuwe versie binnen een paar minuten online.
 
 ## Stap 7. De app op je telefoon zetten
 
