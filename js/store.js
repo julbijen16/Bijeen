@@ -203,7 +203,7 @@ async function ensureAnon(){
   const { data } = await sb.auth.getSession();
   if(data.session) return data.session;
   const r = await sb.auth.signInAnonymously();
-  if(r.error) throw new Error('Inloggen bij de server lukt niet. Heb je internet?');
+  if(r.error) throw new Error('Inloggen bij de server lukt niet ('+(r.error.message||r.error.status||'onbekend')+')');
   return r.data.session;
 }
 const rid = () => 'm'+Math.random().toString(36).slice(2,8);
