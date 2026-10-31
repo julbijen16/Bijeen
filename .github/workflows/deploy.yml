@@ -16,12 +16,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  supabase:
-    name: Database en meldingen bijwerken
+  deploy:
+    name: Database bijwerken en app online zetten
     runs-on: ubuntu-latest
-    outputs:
-      url: ${{ steps.keys.outputs.url }}
-      key: ${{ steps.keys.outputs.key }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -79,29 +79,19 @@ jobs:
           KEY=$(echo "$KEYS" | jq -r '[.[] | select(.name=="anon")][0].api_key // empty')
           if [ -z "$KEY" ]; then KEY=$(echo "$KEYS" | jq -r '[.[] | select((.type // "")=="publishable")][0].api_key // empty'); fi
           if [ -z "$KEY" ]; then echo "::error::Kon de openbare sleutel niet vinden"; exit 1; fi
-          echo "url=https://${REF}.supabase.co" >> "$GITHUB_OUTPUT"
-          echo "key=$KEY" >> "$GITHUB_OUTPUT"
-
-  site:
-    name: App online zetten
-    needs: supabase
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v4
+          # in een bestand bewaren (GitHub geeft waarden met een geheim erin niet door tussen stappen-uitvoer)
+          printf '%s\n%s\n' "https://${REF}.supabase.co" "$KEY" > "$RUNNER_TEMP/bijeen-keys"
       - name: App klaarmaken
-        env:
-          URL: ${{ needs.supabase.outputs.url }}
-          KEY: ${{ needs.supabase.outputs.key }}
         run: |
+          URL=""; KEY=""
+          if [ -f "$RUNNER_TEMP/bijeen-keys" ]; then URL=$(sed -n 1p "$RUNNER_TEMP/bijeen-keys"); KEY=$(sed -n 2p "$RUNNER_TEMP/bijeen-keys"); fi
           VERSION="$(date -u +%Y%m%d)-${GITHUB_SHA::7}"
           mkdir -p _site
           cp -r index.html manifest.webmanifest sw.js css js vendor icons _site/
           printf "window.BIJEEN_CONFIG = { url: '%s', anonKey: '%s' };\nwindow.BIJEEN_VERSION = '%s';\n" "$URL" "$KEY" "$VERSION" > _site/js/config.js
           sed -i "s/const VERSION = 'dev';/const VERSION = '${VERSION}';/" _site/sw.js
           touch _site/.nojekyll
+          if [ -n "$KEY" ]; then echo "App gekoppeld aan de server"; else echo "::warning::App staat online zonder serverkoppeling"; fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
